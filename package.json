@@ -1,5 +1,5 @@
 {
-  "name": "arruma-ruyter-monorepo",
+  "name": "unvibe-monorepo",
   "version": "1.0.0",
   "private": true,
   "workspaces": [
@@ -7,8 +7,8 @@
     "web-app"
   ],
   "scripts": {
-    "run:bot": "npm run build --workspace=arruma-ruyter && npm start --workspace=arruma-ruyter",
-    "build:bot": "npm run build --workspace=arruma-ruyter",
+    "run:bot": "npm run build --workspace=unvibe && npm start --workspace=unvibe",
+    "build:bot": "npm run build --workspace=unvibe",
     "dev:web": "npm run dev --workspace=web-app",
     "build:web": "npm run build --workspace=web-app",
     "start:web": "npm start --workspace=web-app"
