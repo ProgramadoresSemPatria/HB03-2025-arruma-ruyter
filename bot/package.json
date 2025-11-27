@@ -1,5 +1,5 @@
 {
-  "name": "arruma-ruyter",
+  "name": "unvibe",
   "version": "1.0.0",
   "private": true,
   "description": "A Probot app",
@@ -13,19 +13,19 @@
   ],
   "scripts": {
     "build": "tsc",
-    "start": "set PORT=3001&& probot run ./lib/index.js",
+    "start": "probot run ./lib/index.js",
     "test": "vitest"
   },
   "dependencies": {
-    "arruma-ruyter-monorepo": "file:..",
-    "probot": "^13.4.5"
+    "probot": "^13.4.5",
+    "@unvibe/db": "*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "nock": "^14.0.5",
     "smee-client": "^2.0.0",
-    "typescript": "^5.8.3",
-    "vitest": "^2.0.0"
+    "vitest": "^2.0.0",
+    "typescript": "^5.8.3"
   },
   "overrides": {
     "@types/pg": "8.15.1"
