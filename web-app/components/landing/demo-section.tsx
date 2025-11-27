@@ -76,7 +76,7 @@ export function DemoSection() {
                       Directly interpolating user input allows attackers to execute arbitrary SQL.
                     </p>
                     <p className="text-xs font-mono bg-gray-100  p-2 rounded mb-2">
-                      db.query('SELECT * FROM users WHERE id = $1', [req.query.id])
+                      db.query(&apos;SELECT * FROM users WHERE id = $1&apos;, [req.query.id])
                     </p>
                     <div className="flex gap-2 mt-2">
                       <button className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded font-medium hover:bg-indigo-100 ">
