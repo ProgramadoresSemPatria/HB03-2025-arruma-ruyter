@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Navbar } from "@/components/landing/navbar";
 import { Hero } from "@/components/landing/hero";
@@ -9,7 +9,7 @@ import { DemoSection } from "@/components/landing/demo-section";
 import { Trust } from "@/components/landing/trust";
 import { Footer } from "@/components/landing/footer";
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams()
   const [error, setError] = useState<string | null>(null)
 
@@ -71,4 +71,20 @@ export default function Home() {
       <Footer />
     </div>
   );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white font-sans selection:bg-indigo-100 selection:text-indigo-900">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[calc(100vh-160px)]">
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+        <Footer />
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
+  )
 }
