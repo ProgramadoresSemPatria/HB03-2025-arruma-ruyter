@@ -9,9 +9,20 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createServerClient()
+    
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error) {
+      if (error.message?.includes('installation_id') || error.message?.includes('null value')) {
+        return NextResponse.redirect(
+          new URL(
+            '/?error=installation_id_required&message=' + 
+            encodeURIComponent('O installation_id é obrigatório. Por favor, faça login novamente com o installation_id na URL.'),
+            requestUrl.origin
+          )
+        )
+      }
+      
       if (error.message?.includes('Database error') || error.message?.includes('saving new user')) {
         return NextResponse.redirect(
           new URL('/?error=database_error&message=' + encodeURIComponent(error.message), requestUrl.origin)

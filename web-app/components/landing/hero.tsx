@@ -16,7 +16,17 @@ export function Hero() {
     try {
       const installationId = searchParams?.get('installation_id') || getInstallationIdFromUrl()
       
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user }, error: getUserError } = await supabase.auth.getUser()
+      
+      const expectedErrors = ['Auth session missing!', 'User not found']
+      const isExpectedError = getUserError && expectedErrors.some(
+        expectedError => getUserError.message?.includes(expectedError)
+      )
+      
+      if (getUserError && !isExpectedError) {
+        setLoading(false)
+        return
+      }
       
       if (user) {
         if (installationId) {
@@ -39,7 +49,7 @@ export function Hero() {
         ? `${window.location.origin}/auth/callback?installation_id=${encodeURIComponent(installationId)}`
         : `${window.location.origin}/auth/callback`
 
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
           redirectTo,
@@ -48,8 +58,16 @@ export function Hero() {
 
       if (oauthError) {
         setLoading(false)
+      } else if (data?.url) {
+        try {
+          window.location.href = data.url
+        } catch {
+          window.location.replace(data.url)
+        }
+      } else {
+        setLoading(false)
       }
-    } catch (err) {
+    } catch {
       setLoading(false)
     }
   }
