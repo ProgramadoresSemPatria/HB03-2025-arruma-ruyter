@@ -23,19 +23,11 @@ function GithubSetupContent() {
         setIsAuthenticated(false)
       } else {
         setIsAuthenticated(true)
-        if (installationId) {
-          await supabase.auth.updateUser({
-            data: {
-              ...user.user_metadata,
-              installation_id: installationId,
-            },
-          })
-        }
       }
     }
 
     checkAuth()
-  }, [installationId])
+  }, [])
 
   const handleGitHubLogin = async () => {
     setLoading(true)
@@ -44,22 +36,12 @@ function GithubSetupContent() {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
-        if (installationId) {
-          await supabase.auth.updateUser({
-            data: {
-              ...user.user_metadata,
-              installation_id: installationId,
-            },
-          })
-        }
+        // User is already authenticated, redirect to dashboard
         router.push('/dashboard')
         return
       }
 
-      if (installationId) {
-        localStorage.setItem('pending_installation_id', installationId)
-      }
-
+      // Build the redirect URL with installation_id if present
       const redirectTo = installationId
         ? `${window.location.origin}/auth/callback?installation_id=${encodeURIComponent(installationId)}`
         : `${window.location.origin}/auth/callback`
