@@ -8,11 +8,9 @@ import { getInstallationIdFromUrl } from '@/lib/utils/url-params'
 import type { User } from '@supabase/supabase-js'
 
 const AI_MODELS = [
-  'ChatGPT',
-  'Claude',
-  'Gemini',
-  'Llama',
-  'Mistral'
+  { id: 'sonnet-4.5', name: 'Claude Sonnet 4.5' },
+  { id: 'gpt-5.1', name: 'GPT-5.1' },
+  { id: 'gemini-3.0', name: 'Gemini 3.0' }
 ]
 
 function DashboardContent() {
@@ -21,43 +19,45 @@ function DashboardContent() {
   const [loading, setLoading] = useState(true)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set())
+  const [installationId, setInstallationId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadUser() {
-      const installationIdFromUrl = searchParams?.get('installation_id') || 
-                                    (typeof window !== 'undefined' ? getInstallationIdFromUrl() : null)
-      
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
         setUser(user)
-        
-        const installationIdToSave = installationIdFromUrl || 
-                                     localStorage.getItem('pending_installation_id') ||
-                                     null
-        
-        if (installationIdToSave && !user.user_metadata?.installation_id) {
-          const { error: updateError } = await supabase.auth.updateUser({
-            data: {
-              ...user.user_metadata,
-              installation_id: installationIdToSave,
-            },
-          })
-          
-          if (!updateError) {
-            if (localStorage.getItem('pending_installation_id')) {
-              localStorage.removeItem('pending_installation_id')
-            }
-            
-            const { data: { user: updatedUser } } = await supabase.auth.getUser()
-            if (updatedUser) {
-              setUser(updatedUser)
+
+        // Fetch user's installation
+        try {
+          const response = await fetch('/api/installations/get')
+          if (response.ok) {
+            const { data: installation } = await response.json()
+            if (installation?.installation_id) {
+              setInstallationId(installation.installation_id.toString())
             }
           }
-        } else if (user.user_metadata?.installation_id) {
-          if (localStorage.getItem('pending_installation_id')) {
-            localStorage.removeItem('pending_installation_id')
+        } catch (error) {
+          console.error('Failed to fetch installation:', error)
+        }
+
+        // Fetch bot configuration
+        try {
+          const response = await fetch('/api/bot-config')
+          if (response.ok) {
+            const { data: config } = await response.json()
+            if (config && config.model_name) {
+              const models = Array.isArray(config.model_name) 
+                ? config.model_name 
+                : JSON.parse(config.model_name)
+              setSelectedModels(new Set(models))
+            }
           }
+        } catch (error) {
+          console.error('Failed to fetch bot config:', error)
         }
       }
       setLoading(false)
@@ -66,30 +66,11 @@ function DashboardContent() {
     loadUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (event === 'SIGNED_OUT' || !session) {
           setUser(null)
         } else if (event === 'SIGNED_IN') {
           setUser(session.user)
-          
-          const pendingInstallationId = localStorage.getItem('pending_installation_id')
-          
-          if (pendingInstallationId && session.user && !session.user.user_metadata?.installation_id) {
-            const { error: updateError } = await supabase.auth.updateUser({
-              data: {
-                ...session.user.user_metadata,
-                installation_id: pendingInstallationId,
-              },
-            })
-            
-            if (!updateError) {
-              localStorage.removeItem('pending_installation_id')
-              const { data: { user: updatedUser } } = await supabase.auth.getUser()
-              if (updatedUser) {
-                setUser(updatedUser)
-              }
-            }
-          }
         }
       }
     )
@@ -98,6 +79,39 @@ function DashboardContent() {
       subscription.unsubscribe()
     }
   }, [searchParams])
+
+  const handleSave = async () => {
+    setSaving(true)
+    setSaveSuccess(false)
+    setSaveError(null)
+
+    try {
+      const response = await fetch('/api/bot-config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model_names: Array.from(selectedModels),
+          installation_id: installationId ? parseInt(installationId) : null,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to save configuration')
+      }
+
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    } catch (error) {
+      console.error('Failed to save bot config:', error)
+      setSaveError(error instanceof Error ? error.message : 'Failed to save configuration')
+      setTimeout(() => setSaveError(null), 5000)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const toggleModel = (modelName: string) => {
     setSelectedModels(prev => {
@@ -184,17 +198,17 @@ function DashboardContent() {
                       <div className="p-2">
                         {AI_MODELS.map((model) => (
                           <label
-                            key={model}
+                            key={model.id}
                             className="flex items-center p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
                           >
                             <input
                               type="checkbox"
-                              checked={selectedModels.has(model)}
-                              onChange={() => toggleModel(model)}
+                              checked={selectedModels.has(model.id)}
+                              onChange={() => toggleModel(model.id)}
                               className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                             />
                             <span className="ml-3 text-sm font-medium text-gray-900">
-                              {model}
+                              {model.name}
                             </span>
                           </label>
                         ))}
@@ -210,37 +224,78 @@ function DashboardContent() {
                     Modelos Selecionados
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {getSelectedModelsList().map((model) => (
-                      <div
-                        key={model}
-                        className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg"
-                      >
-                        <span className="text-sm font-medium text-indigo-900">
-                          {model}
-                        </span>
-                        <button
-                          onClick={() => toggleModel(model)}
-                          className="text-indigo-600 hover:text-indigo-800"
+                    {getSelectedModelsList().map((modelId) => {
+                      const model = AI_MODELS.find(m => m.id === modelId)
+                      return (
+                        <div
+                          key={modelId}
+                          className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg"
                         >
-                          <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
+                          <span className="text-sm font-medium text-indigo-900">
+                            {model?.name || modelId}
+                          </span>
+                          <button
+                            onClick={() => toggleModel(modelId)}
+                            className="text-indigo-600 hover:text-indigo-800"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}
+
+              <div className="mt-8 flex items-center justify-between">
+                <div className="flex-1">
+                  {saveSuccess && (
+                    <div className="flex items-center text-green-600">
+                      <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm font-medium">Configuração salva com sucesso!</span>
+                    </div>
+                  )}
+                  {saveError && (
+                    <div className="flex items-center text-red-600">
+                      <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      <span className="text-sm font-medium">{saveError}</span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={handleSave}
+                  disabled={saving || selectedModels.size === 0}
+                  className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {saving ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Salvando...
+                    </span>
+                  ) : (
+                    'Salvar Configuração'
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -263,3 +318,4 @@ export default function DashboardPage() {
     </Suspense>
   )
 }
+
