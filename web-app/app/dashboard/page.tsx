@@ -25,7 +25,7 @@ function DashboardContent() {
   const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function loadUser() {
+    async function loadData() {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
@@ -60,24 +60,11 @@ function DashboardContent() {
           console.error('Failed to fetch bot config:', error)
         }
       }
+      
       setLoading(false)
     }
 
-    loadUser()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_OUT' || !session) {
-          setUser(null)
-        } else if (event === 'SIGNED_IN') {
-          setUser(session.user)
-        }
-      }
-    )
-
-    return () => {
-      subscription.unsubscribe()
-    }
+    loadData()
   }, [searchParams])
 
   const handleSave = async () => {
