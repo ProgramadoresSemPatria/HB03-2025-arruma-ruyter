@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from "next/link";
 import { Navbar } from "@/components/landing/navbar";
@@ -8,7 +8,7 @@ import { Footer } from "@/components/landing/footer";
 import { supabase } from '@/lib/supabase/client'
 import { AppBackground } from "@/components/layout/app-background";
 
-export default function GithubSetupPage() {
+function GithubSetupContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const installationId = searchParams.get('installation_id')
@@ -165,5 +165,23 @@ export default function GithubSetupPage() {
       <Footer />
     </AppBackground>
   );
+}
+
+export default function GithubSetupPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white font-sans selection:bg-indigo-100 selection:text-indigo-900">
+        <Navbar />
+        <main className="flex min-h-[calc(100vh-160px)] flex-col items-center justify-center py-20">
+          <div className="mx-auto max-w-3xl px-6 lg:px-8 text-center">
+            <p className="text-gray-600">Carregando...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    }>
+      <GithubSetupContent />
+    </Suspense>
+  )
 }
 

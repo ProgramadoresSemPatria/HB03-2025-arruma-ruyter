@@ -17,8 +17,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "probot": "^13.4.5",
-    "@unvibe/db": "*"
+    "probot": "^13.4.5"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
