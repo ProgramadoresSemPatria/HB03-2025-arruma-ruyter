@@ -10,11 +10,9 @@ import type { User } from '@supabase/supabase-js'
 import { AppBackground } from '@/components/layout/app-background'
 
 const AI_MODELS = [
-  'ChatGPT',
-  'Claude',
-  'Gemini',
-  'Llama',
-  'Mistral'
+  { id: 'sonnet-4.5', name: 'Claude Sonnet 4.5' },
+  { id: 'gpt-5.1', name: 'GPT-5.1' },
+  { id: 'gemini-3.0', name: 'Gemini 3.0' }
 ]
 
 function DashboardContent() {
@@ -23,83 +21,86 @@ function DashboardContent() {
   const [loading, setLoading] = useState(true)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set())
+  const [installationId, setInstallationId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function loadUser() {
-      const installationIdFromUrl = searchParams?.get('installation_id') || 
-                                    (typeof window !== 'undefined' ? getInstallationIdFromUrl() : null)
-      
+    async function loadData() {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
         setUser(user)
-        
-        const installationIdToSave = installationIdFromUrl || 
-                                     localStorage.getItem('pending_installation_id') ||
-                                     null
-        
-        if (installationIdToSave && !user.user_metadata?.installation_id) {
-          const { error: updateError } = await supabase.auth.updateUser({
-            data: {
-              ...user.user_metadata,
-              installation_id: installationIdToSave,
-            },
-          })
-          
-          if (!updateError) {
-            if (localStorage.getItem('pending_installation_id')) {
-              localStorage.removeItem('pending_installation_id')
-            }
-            
-            const { data: { user: updatedUser } } = await supabase.auth.getUser()
-            if (updatedUser) {
-              setUser(updatedUser)
+
+        // Fetch user's installation
+        try {
+          const response = await fetch('/api/installations/get')
+          if (response.ok) {
+            const { data: installation } = await response.json()
+            if (installation?.installation_id) {
+              setInstallationId(installation.installation_id.toString())
             }
           }
-        } else if (user.user_metadata?.installation_id) {
-          if (localStorage.getItem('pending_installation_id')) {
-            localStorage.removeItem('pending_installation_id')
+        } catch (error) {
+          console.error('Failed to fetch installation:', error)
+        }
+
+        // Fetch bot configuration
+        try {
+          const response = await fetch('/api/bot-config')
+          if (response.ok) {
+            const { data: config } = await response.json()
+            if (config && config.model_name) {
+              const models = Array.isArray(config.model_name) 
+                ? config.model_name 
+                : JSON.parse(config.model_name)
+              setSelectedModels(new Set(models))
+            }
           }
+        } catch (error) {
+          console.error('Failed to fetch bot config:', error)
         }
       }
+      
       setLoading(false)
     }
 
-    loadUser()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_OUT' || !session) {
-          setUser(null)
-        } else if (event === 'SIGNED_IN') {
-          setUser(session.user)
-          
-          const pendingInstallationId = localStorage.getItem('pending_installation_id')
-          
-          if (pendingInstallationId && session.user && !session.user.user_metadata?.installation_id) {
-            const { error: updateError } = await supabase.auth.updateUser({
-              data: {
-                ...session.user.user_metadata,
-                installation_id: pendingInstallationId,
-              },
-            })
-            
-            if (!updateError) {
-              localStorage.removeItem('pending_installation_id')
-              const { data: { user: updatedUser } } = await supabase.auth.getUser()
-              if (updatedUser) {
-                setUser(updatedUser)
-              }
-            }
-          }
-        }
-      }
-    )
-
-    return () => {
-      subscription.unsubscribe()
-    }
+    loadData()
   }, [searchParams])
+
+  const handleSave = async () => {
+    setSaving(true)
+    setSaveSuccess(false)
+    setSaveError(null)
+
+    try {
+      const response = await fetch('/api/bot-config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model_names: Array.from(selectedModels),
+          installation_id: installationId ? parseInt(installationId) : null,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to save configuration')
+      }
+
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    } catch (error) {
+      console.error('Failed to save bot config:', error)
+      setSaveError(error instanceof Error ? error.message : 'Failed to save configuration')
+      setTimeout(() => setSaveError(null), 5000)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const toggleModel = (modelName: string) => {
     setSelectedModels(prev => {
@@ -470,3 +471,4 @@ export default function DashboardPage() {
     </Suspense>
   )
 }
+

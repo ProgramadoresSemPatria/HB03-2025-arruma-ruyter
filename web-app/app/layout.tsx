@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { RouteProtector } from "@/components/auth/RouteProtector";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -29,7 +30,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased bg-gray-950 text-gray-50`}
       >
-        {children}
+        <RouteProtector>
+          {children}
+        </RouteProtector>
       </body>
     </html>
   );
