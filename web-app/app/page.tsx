@@ -2,12 +2,14 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { Navbar } from "@/components/landing/navbar";
 import { Hero } from "@/components/landing/hero";
 import { Features } from "@/components/landing/features";
 import { DemoSection } from "@/components/landing/demo-section";
 import { Trust } from "@/components/landing/trust";
 import { Footer } from "@/components/landing/footer";
+import { MainGlowBackground } from "@/components/layout/main-glow-background";
 
 function HomeContent() {
   const searchParams = useSearchParams()
@@ -33,10 +35,14 @@ function HomeContent() {
   }, [searchParams])
 
   return (
-    <div className="min-h-screen bg-white  font-sans selection:bg-indigo-100 selection:text-indigo-900">
+    <div className="min-h-screen bg-gray-950 font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
       <Navbar />
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mx-auto max-w-7xl mt-4">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-950/50 border-l-4 border-red-500 p-4 mx-auto max-w-7xl mt-4 rounded-r-lg backdrop-blur-sm"
+        >
           <div className="flex">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -44,15 +50,15 @@ function HomeContent() {
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-sm text-red-700">{error}</p>
-              <p className="mt-2 text-xs text-red-600">
-                💡 Dica: Verifique o arquivo <code className="bg-red-100 px-1 rounded">TROUBLESHOOTING-DATABASE-ERROR.md</code> para mais informações.
+              <p className="text-sm text-red-300">{error}</p>
+              <p className="mt-2 text-xs text-red-400">
+                💡 Dica: Verifique o arquivo <code className="bg-red-900/50 px-1 rounded text-red-200">TROUBLESHOOTING-DATABASE-ERROR.md</code> para mais informações.
               </p>
             </div>
             <div className="ml-auto pl-3">
               <button
                 onClick={() => setError(null)}
-                className="text-red-400 hover:text-red-600"
+                className="text-red-400 hover:text-red-300 transition-colors"
               >
                 <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -60,14 +66,16 @@ function HomeContent() {
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
-      <main>
-        <Hero />
-        <Trust />
-        <DemoSection />
-        <Features />
-      </main>
+      <MainGlowBackground>
+        <main>
+          <Hero />
+          <Trust />
+          <DemoSection />
+          <Features />
+        </main>
+      </MainGlowBackground>
       <Footer />
     </div>
   );

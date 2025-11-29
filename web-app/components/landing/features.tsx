@@ -1,4 +1,13 @@
+'use client'
+
+import { motion } from 'framer-motion'
+import { useInView } from 'framer-motion'
+import { useRef } from 'react'
+
 export function Features() {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: "-100px" })
+
   const features = [
     {
       title: "Automated Reviews",
@@ -29,35 +38,84 @@ export function Features() {
     },
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+      },
+    },
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut",
+      },
+    },
+  }
+
   return (
-    <section id="features" className="py-24 bg-white "> 
+    // Usa o glow/grid global do MainGlowBackground, sem sobrepor com bg próprio
+    <section id="features" className="py-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-base font-semibold leading-7 text-indigo-600">Powerful Features</h2>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900  sm:text-4xl font-serif">
+        <motion.div
+          className="mx-auto max-w-2xl text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6 }}
+        >
+          <motion.h2
+            className="text-base font-semibold leading-7 bg-linear-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent"
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            Powerful Features
+          </motion.h2>
+          <p className="mt-2 text-3xl font-bold tracking-tight text-gray-50 sm:text-4xl font-sans">
             Review, Secure, and Learn
           </p>
-          <p className="mt-6 text-lg leading-8 text-gray-600 ">
+          <p className="mt-6 text-lg leading-8 text-gray-400">
             Everything you need to ship secure code without slowing down.
           </p>
-        </div>
-        <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
-          <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
-            {features.map((feature) => (
-              <div key={feature.title} className="flex flex-col">
-                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600">
-                  {feature.icon}
-                </div>
-                <dt className="text-xl font-semibold leading-7 text-gray-900 ">
-                  {feature.title}
-                </dt>
-                <dd className="mt-1 flex flex-auto flex-col text-base leading-7 text-gray-600 ">
-                  <p className="flex-auto">{feature.description}</p>
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
+        </motion.div>
+        <motion.dl
+          ref={ref}
+          className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 grid grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3"
+          variants={containerVariants}
+          initial="hidden"
+          animate={isInView ? "visible" : "hidden"}
+        >
+          {features.map((feature) => (
+            <motion.div
+              key={feature.title}
+              className="flex flex-col group"
+              variants={itemVariants}
+              whileHover={{ y: -5 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <motion.div
+                className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                transition={{ type: "spring", stiffness: 400 }}
+              >
+                {feature.icon}
+              </motion.div>
+              <dt className="text-xl font-semibold leading-7 text-gray-50 group-hover:text-indigo-400 transition-colors">
+                {feature.title}
+              </dt>
+              <dd className="mt-1 flex flex-auto flex-col text-base leading-7 text-gray-400">
+                <p className="flex-auto">{feature.description}</p>
+              </dd>
+            </motion.div>
+          ))}
+        </motion.dl>
       </div>
     </section>
   );
