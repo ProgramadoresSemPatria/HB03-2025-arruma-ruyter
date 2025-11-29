@@ -68,25 +68,6 @@ export function Navbar() {
             </motion.div>
             <span className="text-xl font-bold text-gray-50 group-hover:text-indigo-400 transition-colors">Unvibe</span>
           </Link>
-          
-          <div className="hidden md:flex items-center gap-6">
-            {['Features'].map((item, index) => (
-              <motion.div
-                key={item}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + index * 0.1 }}
-              >
-                <Link
-                  href={`#${item.toLowerCase()}`}
-                  className="text-sm font-medium text-gray-400 hover:text-indigo-400 transition-colors relative group"
-                >
-                  {item}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-400 group-hover:w-full transition-all duration-300"></span>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
         </motion.div>
 
         <motion.div
