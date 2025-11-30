@@ -1,4 +1,5 @@
 # root ignores
+/bot/lib
 /node_modules
 /bot/node_modules
 /web-app/node_modules

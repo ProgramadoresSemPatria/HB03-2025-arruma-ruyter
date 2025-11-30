@@ -2,6 +2,7 @@ import { Probot } from "probot";
 import { getBotConfigByInstallation } from "./services/configService.js";
 
 export default (app: Probot) => {
+
   app.on("issues.opened", async (context) => {
     const issueComment = context.issue({
       body: "Thanks for opening this issue!",
@@ -51,15 +52,20 @@ export default (app: Probot) => {
             isGeneratedFixPR,
           },
         },
+
         "ignoring auto-generated/bot pull request"
+
       );
+
       return;
     }
 
     const installationId = context.payload.installation?.id;
+
     const modelsFromConfig = installationId
       ? await getBotConfigByInstallation(installationId)
       : [];
+
     const modelsToUse = modelsFromConfig.length > 0 ? modelsFromConfig : ["gpt-5.1"];
 
     context.log.info(
@@ -77,13 +83,7 @@ export default (app: Probot) => {
         `Modelos configurados para analise: ${modelsToUse.join(", ")}`,
       ].join("\n"),
     });
+    
     await context.octokit.issues.createComment(pullRequestComment);
   });
-
-
-  // For more information on building apps:
-  // https://probot.github.io/docs/
-
-  // To get your app running against GitHub, see:
-  // https://probot.github.io/docs/development/
 };
