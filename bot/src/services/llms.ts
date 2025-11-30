@@ -39,7 +39,7 @@ export interface PullRequestAnalysisFile {
   status: string;
   additions: number;
   deletions: number;
-  patch?: string;
+  patch?: string | null;
   content?: string | null;
 }
 
@@ -177,12 +177,9 @@ const runWithGemini = async (
  * ANTHROPIC EXECUTION
  * --------------------------------------------- */
 
-const runWithAnthropic = async (
-  prompt: string,
-  modelName?: string
-): Promise<LLMResult> => {
+const runWithAnthropic = async (prompt: string, modelName?: string) => {
   if (!anthropic) {
-    throw new Error("ANTHROPIC_API_KEY ausente.");
+    throw new Error("ANTHROPIC_API_KEY ausente: configure no ambiente do bot");
   }
 
   const model = modelName || ANTHROPIC_MODEL;
@@ -191,13 +188,18 @@ const runWithAnthropic = async (
     model,
     max_tokens: 4096,
     temperature: 0.2,
-    messages: [{ role: "user", content: prompt }],
-    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: prompt }
+        ]
+      }
+    ]
   });
 
   const text = resp?.content?.[0]?.text || "";
   const parsed = parseJsonStrict(text);
-
   return { ...parsed, prompt, modelUsed: model };
 };
 

@@ -17,18 +17,20 @@
     "test": "vitest"
   },
   "dependencies": {
-    "probot": "^13.4.5",
-    "@supabase/supabase-js": "^2.86.0",
+    "@anthropic-ai/sdk": "^0.20.0",
     "@google/generative-ai": "^0.21.0",
+    "@octokit/rest": "^22.0.1",
+    "@supabase/supabase-js": "^2.86.0",
     "openai": "^4.77.4",
-    "@anthropic-ai/sdk": "^0.35.0"
+    "probot": "^13.4.5"
   },
   "devDependencies": {
+    "@octokit/types": "^12.6.0",
     "@types/node": "^20.0.0",
     "nock": "^14.0.5",
     "smee-client": "^2.0.0",
-    "vitest": "^2.0.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3",
+    "vitest": "^2.0.0"
   },
   "overrides": {
     "@types/pg": "8.15.1"

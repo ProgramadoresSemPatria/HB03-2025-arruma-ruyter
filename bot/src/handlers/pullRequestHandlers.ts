@@ -1,6 +1,6 @@
 import { Probot } from "probot";
 import { openAutoFixPullRequest } from "../infra/github.js";
-import { analyzePullRequestWithLLM } from "../services/llm.js";
+import { analyzePullRequestWithLLM } from "../services/llms.js";
 import { getBotConfigByInstallation } from "../services/configService.js";
 import {
   buildPullRequestAnalysisInput,

@@ -4,8 +4,7 @@
   "private": true,
   "workspaces": [
     "bot",
-    "web-app",
-    "packages/db"
+    "web-app"
   ],
   "scripts": {
     "run:bot": "npm run build --workspace=unvibe && npm start --workspace=unvibe",

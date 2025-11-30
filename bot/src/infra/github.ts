@@ -1,4 +1,3 @@
-import { Octokit } from "@octokit/rest";
 import { extractFilenames } from "../utils/filenames.js";
 
 /* ---------------------------------------------
@@ -31,7 +30,7 @@ export interface OpenAutoFixParams {
  * --------------------------------------------- */
 
 export const listPullRequestFilenames = async (
-  octokit: Octokit,
+  octokit: any,
   params: { owner: string; repo: string; pullNumber: number }
 ): Promise<string[]> => {
   const { owner, repo, pullNumber } = params;
@@ -50,7 +49,7 @@ export const listPullRequestFilenames = async (
  * --------------------------------------------- */
 
 export const listPullRequestFiles = async (
-  octokit: Octokit,
+  octokit: any,
   params: { owner: string; repo: string; pullNumber: number }
 ) => {
   const { owner, repo, pullNumber } = params;
@@ -65,11 +64,11 @@ export const listPullRequestFiles = async (
 };
 
 /* ---------------------------------------------
- * READ RAW CONTENT OF A FILE (BASE64 DECODE)
+ * READ RAW CONTENT OF A FILE
  * --------------------------------------------- */
 
 const fetchFileContent = async (
-  octokit: Octokit,
+  octokit: any,
   params: { owner: string; repo: string; path: string; ref: string }
 ): Promise<string | null> => {
   const contentResponse = await octokit.repos.getContent({
@@ -79,7 +78,6 @@ const fetchFileContent = async (
     ref: params.ref,
   });
 
-  // directory → ignore
   if (Array.isArray(contentResponse.data)) return null;
 
   if (
@@ -104,7 +102,7 @@ const fetchFileContent = async (
  * --------------------------------------------- */
 
 export const listPullRequestFilesWithContent = async (
-  octokit: Octokit,
+  octokit: any,
   params: {
     owner: string;
     repo: string;
@@ -122,8 +120,7 @@ export const listPullRequestFilesWithContent = async (
 
   const filesWithContent = await Promise.all(
     files.map(async (file: any): Promise<PullRequestFile> => {
-      const shouldFetch =
-        file.status !== "removed" && !!file.filename;
+      const shouldFetch = file.status !== "removed" && !!file.filename;
 
       const content = shouldFetch
         ? await fetchFileContent(octokit, {
@@ -149,11 +146,11 @@ export const listPullRequestFilesWithContent = async (
 };
 
 /* ---------------------------------------------
- * GIT: CREATE BRANCH FROM SHA
+ * GIT: CREATE BRANCH
  * --------------------------------------------- */
 
 const createBranchFromSha = async (
-  octokit: Octokit,
+  octokit: any,
   params: { owner: string; repo: string; branchName: string; sha: string }
 ) => {
   await octokit.git.createRef({
@@ -169,7 +166,7 @@ const createBranchFromSha = async (
  * --------------------------------------------- */
 
 const commitChanges = async (
-  octokit: Octokit,
+  octokit: any,
   params: {
     owner: string;
     repo: string;
@@ -187,7 +184,6 @@ const commitChanges = async (
     commit_sha: baseSha,
   });
 
-  // Create blobs
   const blobs = await Promise.all(
     changes.map(async (change) => {
       const blob = await octokit.git.createBlob({
@@ -201,13 +197,12 @@ const commitChanges = async (
     })
   );
 
-  // Create tree
   const tree = blobs.map((item) => ({
     path: item.change.path,
-    mode: item.change.mode ?? "100644",
+    mode: "100644",
     type: "blob",
     sha: item.sha,
-  }));
+    }));
 
   const newTree = await octokit.git.createTree({
     owner,
@@ -216,7 +211,6 @@ const commitChanges = async (
     tree,
   });
 
-  // Create commit
   const newCommit = await octokit.git.createCommit({
     owner,
     repo,
@@ -225,7 +219,6 @@ const commitChanges = async (
     parents: [baseSha],
   });
 
-  // Update ref
   await octokit.git.updateRef({
     owner,
     repo,
@@ -238,11 +231,11 @@ const commitChanges = async (
 };
 
 /* ---------------------------------------------
- * PLACEHOLDER PR (used for debugging)
+ * PLACEHOLDER PR
  * --------------------------------------------- */
 
 export const openPlaceholderPullRequest = async (
-  octokit: Octokit,
+  octokit: any,
   params: {
     owner: string;
     repo: string;
@@ -301,11 +294,11 @@ export const openPlaceholderPullRequest = async (
 };
 
 /* ---------------------------------------------
- * AUTO-FIX PR (REAL)
+ * REAL AUTO-FIX PR
  * --------------------------------------------- */
 
 export const openAutoFixPullRequest = async (
-  octokit: Octokit,
+  octokit: any,
   params: OpenAutoFixParams
 ) => {
   const {
@@ -327,7 +320,7 @@ export const openAutoFixPullRequest = async (
   const changes = patches.map((patch) => ({
     path: patch.filename,
     content: patch.patchedContent,
-    mode: "100644",
+    mode: "100644" as const,
   }));
 
   const commitSha = await commitChanges(octokit, {
