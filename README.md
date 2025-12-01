@@ -1,6 +1,9 @@
-# Arruma-Ruyter
+# Unvibe
 
-> 📦 Monorepo containing a GitHub security bot (built with Probot) and a companion Next.js web dashboard.
+The AI-powered bot to help you review, secure, and ship code with confidence. Designed for vibe-coders who want to learn while they build.
+▶️ [Video](https://www.loom.com/share/245b2fa34f774096a6fdd291d0b8a3b1)
+🌐 [unvibe.ai](https://unvibe-bot.vercel.app/)
+🤖 [GitHub App](https://github.com/apps/unvibe-bot/)
 
 ## Overview
 
