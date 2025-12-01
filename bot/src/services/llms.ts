@@ -2,6 +2,16 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 
+function sanitizeLLMJson(text: string) {
+  return text
+    .replace(/^\uFEFF/, "") // remove BOM
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, "") // remove unicode invisível
+    .replace(/\uFFFD/g, "") // remove � caracter "unknown"
+    .trim();
+}
+
 /* ---------------------------------------------
  * ENV VARS
  * --------------------------------------------- */
@@ -76,7 +86,16 @@ export const buildGeminiPrompt = (input: PullRequestAnalysisInput): string => {
     "comment deve explicar as vulnerabilidades encontradas. Não inclua links nem placeholders.",
     "patches[].patchedContent deve conter o ARQUIVO COMPLETO corrigido.",
     "Se não houver vulnerabilidades, retorne patches: [] e um comment curto.",
-  ].join("\n");
+
+    // 🔥 ADIÇÃO OBRIGATÓRIA
+    "IMPORTANTE:",
+    "É OBRIGATÓRIO retornar ao menos 1 item em patches[] quando qualquer vulnerabilidade for encontrada.",
+    "Nunca retorne apenas comentários quando houver vulnerabilidade.",
+    "Sempre retorne patches completos com o arquivo inteiro corrigido.",
+    "patches[].patchedContent deve conter o arquivo COMPLETO após a correção.",
+    "Mesmo que a solução seja remover código vulnerável, devolva o arquivo inteiro já alterado.",
+    "Retorne SEMPRE JSON válido contendo os campos: title, comment, patches[]."
+    ].join("\n");
 
   const filesSection = input.files
     .map((file) => {
@@ -143,7 +162,10 @@ const runWithGemini = async (
       });
 
       const text = result.response.text();
-      const parsed = parseJsonStrict(text);
+      const clean = sanitizeLLMJson(text);
+      const parsed = parseJsonStrict(clean);
+
+
 
       return { ...parsed, prompt, modelUsed: modelName };
     } catch (err: any) {
@@ -199,7 +221,10 @@ const runWithAnthropic = async (prompt: string, modelName?: string) => {
   });
 
   const text = resp?.content?.[0]?.text || "";
-  const parsed = parseJsonStrict(text);
+  const clean = sanitizeLLMJson(text);
+  const parsed = parseJsonStrict(clean);
+
+
   return { ...parsed, prompt, modelUsed: model };
 };
 
@@ -231,7 +256,10 @@ const runWithOpenAI = async (
   });
 
   const text = completion.choices?.[0]?.message?.content || "";
-  const parsed = parseJsonStrict(text);
+  const clean = sanitizeLLMJson(text);
+  const parsed = parseJsonStrict(clean);
+
+
 
   return { ...parsed, prompt, modelUsed: model };
 };

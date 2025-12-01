@@ -134,11 +134,35 @@ export function registerPullRequestHandlers(app: Probot) {
       }
 
       const patches = Array.isArray(llmResult?.patches)
-        ? llmResult.patches.filter(
-            (p: any) =>
-              !!p?.filename && typeof p?.patchedContent === "string"
-          )
-        : [];
+  ? llmResult.patches
+      .map((p: any) => {
+        // Fallback 1: LLM retorna filePath
+        if (!p.filename && p.filePath) {
+          p.filename = p.filePath;
+        }
+
+        // Fallback 2: LLM retorna path
+        if (!p.filename && p.path) {
+          p.filename = p.path;
+        }
+
+        // Fallback 3: Só existe 1 arquivo modificado no PR
+        if (!p.filename && analysisInput.files.length === 1) {
+          p.filename = analysisInput.files[0].filename;
+        }
+
+        return p;
+      })
+      .filter(
+        (p: any) =>
+          !!p.filename &&
+          typeof p.patchedContent === "string" &&
+          p.patchedContent.trim().length > 0
+      )
+  : [];
+
+
+
 
       const hasPatches = patches.length > 0;
       const modelUsed = llmResult?.modelUsed || preferredModel || "desconhecido";
