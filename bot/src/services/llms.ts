@@ -1,16 +1,13 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google-generative-ai";
 import Anthropic from "@anthropic-ai/sdk";
-
-const tempDebugApiKey = "AIzaSyA-TEST-12345-LEAKED-KEY";
 
 function sanitizeLLMJson(text: string) {
 	return text
 		.replace(/^\uFEFF/, "")
-		.replace(/```json/gi, "")
-		.replace(/```/g, "")
+		.replace(//gi, "")
+		.replace(//g, "")
 		.replace(/^json\s*/i, "")
-		.replace(/json\n/i, "")
-		.replace(/[\u0000-\u001F\u007F-\u009F]/g, "")
+		.replace(/json\n/i, "")		.replace(/[\u0000-\u001F\u007F-\u009F]/g, "")
 		.replace(/\uFFFD/g, "")
 		.trim();
 }
