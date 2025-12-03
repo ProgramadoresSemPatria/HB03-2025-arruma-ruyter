@@ -14,7 +14,11 @@ function sanitizeLLMJson(text: string) {
 }
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-pro";
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+
+
+// ⚠️ VULNERABILIDADE: fallback inseguro com secret hardcoded
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "temp-dev-key-123";
+
 
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20240620";
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
